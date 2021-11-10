@@ -1,18 +1,18 @@
-package com.uiolert.stars_.engine;
+package com.uiolert.stars_.modes.star;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class Model {
+public class ModelStar {
 
     static float MOTION_SPEED = 0.00000000025f;
 
-    public static float INITIAL_Z_COORD = -5;
+    public static float INITIAL_Z_COORD = -3;
 
     ArrayList<Point> points = new ArrayList<>();
 
     public void update(long elapsedTime) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 10; i++) {
             points.add(new Point(random(-4, 4), random(-4, 4), INITIAL_Z_COORD,
                     0xff000000 | (int) random(180, 255) << 16 | (int) random(180, 255) << 8 | (int) random(180, 255),random(1,5)));
         }

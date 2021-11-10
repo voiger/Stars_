@@ -12,6 +12,7 @@
         android:theme="@style/Theme.Stars_">
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,10 +21,11 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".Wallpapers"
+        <service android:name=".WallpapersStar_"
             android:enabled="true"
-            android:label="Wallpaper Example"
+            android:label="Star_"
             android:permission="android.permission.BIND_WALLPAPER"
+            android:screenOrientation="portrait"
             android:exported="true">
 
             <meta-data

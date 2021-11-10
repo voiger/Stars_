@@ -1,42 +1,69 @@
 package com.uiolert.stars_.engine;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
+import android.util.Log;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
+import com.google.gson.Gson;
+import com.uiolert.stars_.Mode;
+import com.uiolert.stars_.NamesMode;
+import com.uiolert.stars_.modes.ball.ModeBalls;
+import com.uiolert.stars_.modes.parallax.ModeParallax;
+import com.uiolert.stars_.modes.star.ModeStar;
+
+import java.util.jar.Attributes;
+
+
 public class EngineWallpaper {
 
-    private Model model;
-    private Render render;
-
+    private long timer = System.currentTimeMillis();
+    private int fpsMath = 0;
+    boolean lockCanvas = false;
     private SurfaceHolder.Callback callback;
     private SurfaceHolder surfaceHolder;
-
     private volatile boolean stopped;
-
     long time = System.nanoTime();
 
+    Context context;
+    Mode mode;
     Runnable threadRunnable = new Runnable() {
         @Override
         public void run() {
-            while (!stopped)  {
+            while (!stopped) {
                 Canvas canvas;
-                if (surfaceHolder == null || (canvas = surfaceHolder.lockCanvas()) == null) {
+                if (surfaceHolder == null || lockCanvas) {
                     synchronized (EngineWallpaper.this) {
                         try {
                             EngineWallpaper.this.wait();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+
                         }
                     }
                 } else {
-                    long timeElapsed = System.nanoTime() - time;
+                    long elapsedTime = System.nanoTime() - time;
                     time = System.nanoTime();
-                    model.update(timeElapsed);
-                    render.draw(canvas, model);
-                    surfaceHolder.unlockCanvasAndPost(canvas);
+                    try {
+                        canvas = surfaceHolder.lockCanvas();
+                        lockCanvas = true;
+
+                        mode.update(canvas, elapsedTime);
+
+                        surfaceHolder.unlockCanvasAndPost(canvas);
+
+                    } catch (Exception e) {
+
+                    }
+                    lockCanvas = false;
+                    fpsMath++;
+                    if (System.currentTimeMillis() - timer > 1000) {
+                        timer += 1000;
+                        Log.e("Fps", fpsMath + "");
+                        fpsMath = 0;
+                    }
                 }
             }
         }
@@ -46,11 +73,43 @@ public class EngineWallpaper {
         this.stopped = true;
     }
 
-    public EngineWallpaper(SurfaceHolder surfaceHolder) {
-        model = new Model();
-        render = new Render();
+    Gson gson = new Gson();
 
-        Thread engineThread = new Thread(threadRunnable, "EngineThread");
+    public EngineWallpaper(SurfaceHolder surfaceHolder, Context context) {
+        this.context = context;
+        this.surfaceHolder = surfaceHolder;
+
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences("Mode", Context.MODE_PRIVATE);
+        //SharedPreferences.Editor editor = sharedPreferences.edit();
+        NamesMode namesMode = NamesMode.valueOf(sharedPreferences.getString("mode", ""));
+        switch (namesMode){
+            case parallax:
+                mode = new ModeParallax(context);
+                break;
+            case ball:
+                mode = new ModeBalls(context);
+                break;
+            case star:
+                mode = new ModeStar(context);
+                break;
+        }
+
+        Log.e("Mode", "EngineWallpaper: "+mode.toString() );
+
+        init();
+    }
+
+    public EngineWallpaper(SurfaceHolder surfaceHolder, Context context, Mode mode) {
+        this.context = context;
+        this.mode = mode;
+        this.surfaceHolder = surfaceHolder;
+
+        init();
+    }
+
+    private void init() {
+        Thread engineThread = new Thread(threadRunnable, "EngineThread"+mode.getNamesMod().name());
         engineThread.start();
 
         callback = new SurfaceHolder.Callback() {
@@ -58,7 +117,8 @@ public class EngineWallpaper {
             public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
                 EngineWallpaper.this.surfaceHolder = surfaceHolder;
                 synchronized (EngineWallpaper.this) {
-                    EngineWallpaper.this.notifyAll();
+                    lockCanvas = false;
+                    EngineWallpaper.this.notify();
                 }
             }
 
@@ -76,5 +136,5 @@ public class EngineWallpaper {
         surfaceHolder.addCallback(callback);
     }
 
-
 }
+

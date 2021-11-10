@@ -1,4 +1,4 @@
-package com.uiolert.stars_.engine;
+package com.uiolert.stars_.modes.star;
 
 public class Point {
     float x;
